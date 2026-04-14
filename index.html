@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Search</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #070b16;
+      color: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, rgba(59,130,246,0.12), transparent 28%),
+                  linear-gradient(180deg, #090d17 0%, #06090f 100%);
+    }
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 60px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #60a5fa;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 0.75rem;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    header p {
+      max-width: 720px;
+      margin: 18px auto 0;
+      color: #bfcad8;
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+    .panel {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .sidebar {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+    }
+    .widget {
+      margin-bottom: 28px;
+    }
+    .widget h2 {
+      margin: 0 0 16px;
+      font-size: 0.92rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .ais-SearchBox {
+      width: 100%;
+    }
+    .ais-SearchBox-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+    }
+    .ais-SearchBox-input {
+      width: 100%;
+      min-height: 54px;
+      padding: 0 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+    }
+    .ais-SearchBox-input::placeholder {
+      color: #94a3b8;
+    }
+    .ais-SearchBox-submit,
+    .ais-SearchBox-reset {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(37, 99, 235, 0.95);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .ais-SearchBox-submit:hover,
+    .ais-SearchBox-reset:hover {
+      transform: translateY(-1px);
+      background: #1d4ed8;
+    }
+    .sidebar .select-widget {
+      width: 100%;
+    }
+    .ais-MenuSelect-select,
+    .select-filter {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.93);
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, #94a3b8 50%),
+                        linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 6px), calc(100% - 12px) calc(50% - 6px);
+      background-size: 8px 8px, 8px 8px;
+      background-repeat: no-repeat;
+    }
+    .ais-MenuSelect-select:hover,
+    .ais-MenuSelect-select:focus,
+    .select-filter:hover,
+    .select-filter:focus {
+      border-color: rgba(37, 99, 235, 0.5);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .results {
+      display: grid;
+      gap: 24px;
+    }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 18px 24px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, 0.90);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 22px 45px rgba(15, 23, 42, 0.12);
+    }
+    .results-header > div {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .results-header .stats {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    .results-header .clear-refinements button {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .results-header .clear-refinements button:hover {
+      background: rgba(37, 99, 235, 0.12);
+    }
+    .hit-card {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 24px;
+      padding: 24px;
+      border-radius: 26px;
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      background: rgba(15, 23, 42, 0.88);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.15);
+    }
+    .hit-card img {
+      width: 100%;
+      min-height: 260px;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 20px;
+      background: #0f172a;
+    }
+    .hit-content {
+      display: grid;
+      gap: 16px;
+    }
+    .hit-title {
+      margin: 0;
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+      color: #f8fafc;
+    }
+    .hit-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    .hit-meta span {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      min-width: 76px;
+      text-align: center;
+    }
+    .hit-overview {
+      margin: 0;
+      color: #cbd5e1;
+      line-height: 1.75;
+      max-width: 100%;
+    }
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 12px 0;
+    }
+    .pagination button {
+      min-width: 44px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .pagination button:hover {
+      transform: translateY(-1px);
+      background: rgba(37, 99, 235, 0.14);
+    }
+    .pagination button.ais-Pagination-item--selected {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+    }
+    .ais-Pagination-item--disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .ais-RefinementList-showMore {
+      margin-top: 12px;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(15, 23, 42, 0.85);
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+    @media (max-width: 960px) {
+      .panel {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        max-height: none;
+      }
+      .hit-card {
+        grid-template-columns: 1fr;
+      }
+      .hit-card img {
+        height: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="eyebrow">Movie discovery</div>
+      <h1>Movie Search</h1>
+      <p>Search the collection by title, overview, genre, release year, rating, or poster image.</p>
+    </header>
+
+    <div class="panel">
+      <aside class="sidebar">
+        <div class="widget" id="searchbox"></div>
+
+        <div class="widget">
+          <h2>Genre</h2>
+          <div id="genre-select" class="select-widget"></div>
+        </div>
+
+        <div class="widget">
+          <h2>Year released</h2>
+          <div id="year-select" class="select-widget"></div>
+        </div>
+      </aside>
+
+      <main class="results">
+        <div class="results-header">
+          <div class="stats" id="stats"></div>
+          <div class="clear-refinements" id="clear-refinements"></div>
+        </div>
+
+        <div id="hits"></div>
+        <div id="pagination" class="pagination"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+  <script>
+    const searchClient = algoliasearch('7EYHMLXK5T', 'c5f1c238cadedaf3d83fb045b8ef1538');
+
+    const search = instantsearch({
+      indexName: 'movies',
+      searchClient,
+    });
+
+    search.addWidgets([
+      instantsearch.widgets.searchBox({
+        container: '#searchbox',
+        placeholder: 'Search movies by title, overview, or genre…',
+        showReset: true,
+        showSubmit: true,
+        showLoadingIndicator: true,
+      }),
+
+      instantsearch.widgets.stats({
+        container: '#stats',
+        templates: {
+          text(data) {
+            return `${data.nbHits} movies found in ${data.processingTimeMS}ms`;
+          },
+        },
+      }),
+
+      instantsearch.widgets.clearRefinements({
+        container: '#clear-refinements',
+        templates: {
+          resetLabel: 'Clear filters',
+        },
+        cssClasses: {
+          button: 'clear-refinements-button',
+        },
+      }),
+
+      instantsearch.widgets.menuSelect({
+        container: '#genre-select',
+        attribute: 'genres',
+        limit: 50,
+        sortBy: ['count:desc'],
+        templates: {
+          defaultOption: 'All genres',
+        },
+      }),
+
+      instantsearch.widgets.menuSelect({
+        container: '#year-select',
+        attribute: 'release_year',
+        limit: 50,
+        sortBy: ['name:desc'],
+        templates: {
+          defaultOption: 'All years',
+        },
+      }),
+
+      instantsearch.widgets.hits({
+        container: '#hits',
+        templates: {
+          item: `
+            <article class="hit-card">
+              <img src="{{poster_url}}" alt="{{title}} poster" onerror="this.src='https://via.placeholder.com/180x260?text=No+Image'" />
+              <div class="hit-content">
+                <h3 class="hit-title">{{#helpers.highlight}}{ "attribute": "title" }{{/helpers.highlight}}</h3>
+                <div class="hit-meta">
+                  <span>Genre: {{genre}}</span>
+                  <span>Year: {{release_year}}</span>
+                  <span>Rating: {{vote_average}}</span>
+                </div>
+                <p class="hit-overview">{{#helpers.highlight}}{ "attribute": "overview" }{{/helpers.highlight}}</p>
+              </div>
+            </article>
+          `,
+          empty: `
+            <div style="padding: 24px; border-radius: 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.12); text-align: center; color: #cbd5e1;">
+              <h2>No movies matched your search</h2>
+              <p>Try a different search term or clear the filters.</p>
+            </div>
+          `,
+        },
+      }),
+
+      instantsearch.widgets.pagination({
+        container: '#pagination',
+      }),
+
+      instantsearch.widgets.configure({
+        hitsPerPage: 12,
+      }),
+    ]);
+
+    search.start();
+  </script>
+</body>
+</html>
